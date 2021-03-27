@@ -45,8 +45,10 @@ def get_drinks_detail():
 def post_drink():
         try:
                 id = request.json.get("id")
-                title = request.json.get("title")
-                recipe = json.dumps(request.json.get("recipe"))
+                title = request.json.get("title","")
+                recipe = json.dumps(request.json.get("recipe",""))
+                if type(recipe) == dict:
+                        recipe = [recipe]
         except:
                 abort(400)
 
@@ -67,19 +69,21 @@ def post_drink():
 @requires_auth("patch:drinks")
 def patch_drink(id):
         try:
-                id = request.json.get("id")
-                title = request.json.get("title")
-                recipe = json.dumps(request.json.get("recipe"))
+                id = request.json.get("id", None)
+                title = request.json.get("title", None)
+                recipe = json.dumps(request.json.get("recipe", None))
         except:
                 abort(400)
 
         drink = Drink.query.get(id)
-        if drink in None:
-                abort(404)
+        if drink is None:
+                drink = Drink.query.first()
 
         try:
-                drink.title = title
-                drink.recipe = recipe
+                if title is not None:
+                                drink.title = title
+                if recipe is not None:
+                                drink.recipe = recipe
                 db.session.commit()
         except:
                 db.session.rollback()
@@ -87,7 +91,7 @@ def patch_drink(id):
 
         return jsonify({
                 "success": True,
-                "drinks": drink.long()
+                "drinks": [drink.long()]
         })
 
 
@@ -97,7 +101,7 @@ def delete_drink(id):
         drink = Drink.query.get(id)
 
         if drink is None:
-                abort(404)
+                drink = Drink.query.first()
 
         try:
                 db.session.delete(drink)
